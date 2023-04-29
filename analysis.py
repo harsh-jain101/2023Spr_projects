@@ -159,7 +159,7 @@ def create_job_map(df: pd.DataFrame) -> folium.Map:
 
         # Add marker to map
         folium.Marker(location=[lat, long], popup=popup_html).add_to(map)
-    # map
+    return map
 
 
 def plot_salary_distribution(df: pd.DataFrame, job_title: str) -> None:
