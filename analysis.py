@@ -192,9 +192,9 @@ def plot_salary_distribution(df: pd.DataFrame, job_title: str) -> None:
     # Plot the distribution of median salaries across different regions
     plt.figure(figsize=(16, 9))
     sns.barplot(x='state', y='mean_salary', data=state_median_salary)
-    plt.title('Median Salary by State')
+    plt.title('Mean Salary by State')
     plt.xlabel('State')
-    plt.ylabel('Median Salary ($)')
+    plt.ylabel('Mean Salary ($)')
     plt.show()
 
 
@@ -222,3 +222,27 @@ def skill_cooccurrence(df: pd.DataFrame) -> pd.DataFrame:
     cooccurrence_df = pd.DataFrame(skill_counts)
     cooccurrence_df = cooccurrence_df.fillna(0)
     return cooccurrence_df
+
+def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_state_df: pd.DataFrame, city: string = 'Chicago, IL') -> pd.DataFrame:
+    """
+    Calculates the cost of living adjusted mean salary for every job post.
+    
+    :param job_df: DataFrame: the dataset containing the job lisitngs, mean salaries and other attributes.
+    : param cli_df: DataFrame: the dataset containg cost of living index for different cities in US
+    : param cli_state_df: DataFrame: the dataset containg cost of living index for the states in US
+    : param city: string: city against which to calculate the mean salary
+    """
+    df = job_df.copy()
+    df['city_state'] = df.city.str.cat(df.state, sep=', ')
+    cli_df['city_state'] = cli_df.city.str.cat(cli_df.state, sep=', ')
+    ref_cli = float(cli_df.loc[cli_df.city_state==city, 'cost_of_living_index'])
+    for idx, job in df.iterrows():
+        if pd.notna(job.mean_salary) and cli_df.city_state.str.contains('^'+job['city_state']+'$', regex=True).any():
+            city_cli = float(cli_df.loc[cli_df.city_state==job['city_state'], 'cost_of_living_index'])
+            df.loc[idx, 'adjusted_salary'] = round(df.loc[idx, 'mean_salary']*(city_cli / ref_cli), 2)
+        elif pd.notna(job.mean_salary) and cli_state_df.state.str.contains('^'+job['state']+'$', regex=True).any():
+            state_cli = float(cli_state_df.loc[cli_state_df.state==job['state'], 'cost_of_living_index'])
+            df.loc[idx, 'adjusted_salary'] = round(df.loc[idx, 'mean_salary']*(state_cli / ref_cli), 2)
+        else:
+            df.loc[idx, 'adjusted_salary'] = np.nan
+    return df
