@@ -21,13 +21,11 @@ def calculate_skill_match(df: pd.DataFrame, skills: list[str]) -> pd.DataFrame:
     # Convert to set
     skills_set = set(skills)
 
-    # Calculate the percentage match for each job posting
     skill_matches = []
     for job_skills in df['skills']:
-        # Split the 'skills' string
         if pd.notna(job_skills):
             job_skills_set = set(job_skills.split(', '))
-            # Calculate the percentage of matching skills
+            # Calculate the percentage 
             match_percent = len(job_skills_set & skills_set) / len(skills_set) * 100
             skill_matches.append(match_percent)
         else:
@@ -37,7 +35,6 @@ def calculate_skill_match(df: pd.DataFrame, skills: list[str]) -> pd.DataFrame:
     df_with_match = df.copy()
     df_with_match['skill_match'] = skill_matches
 
-    # Return the new dfframe with the 'skill_match' column
     return df_with_match
 
 
@@ -54,7 +51,6 @@ def filter_jobs_by_salary_range(df: pd.DataFrame, salary_range: str) -> pd.DataF
     min_salary = int(salary_range.split('-')[0])
     max_salary = int(salary_range.split('-')[1])
 
-    # Filter jobs with annual compensation within the salary range
     filtered_df = df[(df['min_annual_comp'] >= min_salary) & (df['max_annual_comp'] <= max_salary)]
 
     return filtered_df
@@ -109,10 +105,8 @@ def top_skills(data: pd.DataFrame, n: int) -> pd.DataFrame:
     # Create a DataFrame from the dictionary of skill counts
     skill_df = pd.DataFrame.from_dict(skill_counts, orient='index', columns=['count'])
 
-    # Sort the DataFrame by the count of each skill
     skill_df = skill_df.sort_values(by='count', ascending=False)
 
-    # Return the top n most in-demand skills
     return skill_df.head(n)
 
 
@@ -143,7 +137,6 @@ def create_job_map(df: pd.DataFrame) -> folium.Map:
     # https://towardsdatascience.com/creating-a-simple-map-with-folium-and-python-4c083abfff94
     map_center = [40.7831, -73.9712]  # Example center point in New York City
 
-    # Create map object
     map = folium.Map(location=map_center, zoom_start=10)
 
     # Iterate over rows in dataset and add markers to the map
@@ -153,11 +146,8 @@ def create_job_map(df: pd.DataFrame) -> folium.Map:
         job_title = row['title']
         company_name = row['company']
         salary = row['mean_salary']
-
-        # Create HTML string for marker popup
         popup_html = f"<b>{job_title}</b><br>{company_name}<br>{salary}"
 
-        # Add marker to map
         folium.Marker(location=[lat, long], popup=popup_html).add_to(map)
     return map
 
@@ -191,7 +181,7 @@ def plot_salary_distribution(df: pd.DataFrame, job_title: str) -> None:
         'mean_salary'].median().reset_index()
     # Plot the distribution of median salaries across different regions
     plt.figure(figsize=(16, 9))
-    sns.barplot(x='state', y='mean_salary', data=state_median_salary)
+    sns.barplot(x='state', y='mean_salary', data=state_median_salary, color='midnightblue')
     plt.title('Mean Salary by State')
     plt.xlabel('State')
     plt.ylabel('Mean Salary ($)')
@@ -223,7 +213,7 @@ def skill_cooccurrence(df: pd.DataFrame) -> pd.DataFrame:
     cooccurrence_df = cooccurrence_df.fillna(0)
     return cooccurrence_df
 
-def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_state_df: pd.DataFrame, city: string = 'Chicago, IL') -> pd.DataFrame:
+def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_state_df: pd.DataFrame, city: str = 'Chicago, IL') -> pd.DataFrame:
     """
     Calculates the cost of living adjusted mean salary for every job post.
     

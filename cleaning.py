@@ -26,7 +26,7 @@ def find_salary(salary_string: str) -> list[float]:
     :param salary_string: str: string containing salary information
     :return: List[float]: list of extracted salaries
     """
-    salary_string = salary_string.replace(',', '')
+    salary_string = salary_string.lower().replace(',', '')
     pattern = re.compile('[\d(\.\d)?]+')
     salaries = re.findall(pattern, salary_string)
     for idx in range(len(salaries)):
