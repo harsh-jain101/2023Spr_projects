@@ -67,6 +67,7 @@ def top_skills(data: pd.DataFrame, n: int) -> pd.DataFrame:
     """
     # Create a dictionary to count the occurrences of each skill
     skill_counts = {}
+    # Utilised chatgpt to remove generic terms from skills.unique like computer, engineering, which were not real skills but were occuring many times. Reference - https://chat.openai.com/
     all_skill_list = ['Azure AD',
                       '.net', ' oauth', ' valet key', ' api', ' azure AD',
                       'AAA game engine experience', ' C/C++ programming', ' BS CS/CE',
@@ -89,6 +90,8 @@ def top_skills(data: pd.DataFrame, n: int) -> pd.DataFrame:
                       ' Prometheus', ' ELK Stack', ' Apache Kafka',
                       'RESTful APIs', ' GraphQL', ' WebSockets', ' OAuth 2.0', ' OpenID Connect', ' SAML 2.0', ' JWT',
                       'OAuth2/OIDC libraries']
+    for sk in all_skill_list:
+        sk.replace(" ","")
     # Loop over each job listing and count the number of occurrences of each skill
     for skills in data['skills']:
         if pd.isna(skills) == True:
@@ -134,7 +137,7 @@ def create_job_map(df: pd.DataFrame) -> folium.Map:
     :param df: pd.DataFrame: the dataset containing job postings and their corresponding locations
     :return: folium.Map: a folium Map object with markers for each job posting location
     """
-    # https://towardsdatascience.com/creating-a-simple-map-with-folium-and-python-4c083abfff94
+    # Reference - https://towardsdatascience.com/creating-a-simple-map-with-folium-and-python-4c083abfff94
     map_center = [40.7831, -73.9712]  # Example center point in New York City
 
     map = folium.Map(location=map_center, zoom_start=10)
@@ -187,31 +190,24 @@ def plot_salary_distribution(df: pd.DataFrame, job_title: str) -> None:
     plt.ylabel('Mean Salary ($)')
     plt.show()
 
+# We are still working on this function.
 
-def skill_cooccurrence(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Calculates the co-occurrence of skills mentioned in job listings.
+# def skill_cooccurrence(df: pd.DataFrame) -> pd.DataFrame:
+#     skill_counts = {}
+#     for skills in df['skills']:
+#         skills_set = set(skills.split(', '))
+#         for skill in skills_set:
+#             if skill not in skill_counts:
+#                 skill_counts[skill] = {}
+#             for other_skill in skills_set:
+#                 if skill != other_skill:
+#                     if other_skill not in skill_counts[skill]:
+#                         skill_counts[skill][other_skill] = 0
+#                     skill_counts[skill][other_skill] += 1
 
-    :param df: DataFrame: the dataset containing job listings and associated skills
-    :return: DataFrame: a table showing the number of times each skill is mentioned with another skill
-    """
-    # Create a dictionary to count the number of times each skill is mentioned with another skill
-    skill_counts = {}
-    for skills in df['skills']:
-        skills_set = set(skills.split(', '))
-        for skill in skills_set:
-            if skill not in skill_counts:
-                skill_counts[skill] = {}
-            for other_skill in skills_set:
-                if skill != other_skill:
-                    if other_skill not in skill_counts[skill]:
-                        skill_counts[skill][other_skill] = 0
-                    skill_counts[skill][other_skill] += 1
-
-    # Convert the dictionary to a DataFrame and return it
-    cooccurrence_df = pd.DataFrame(skill_counts)
-    cooccurrence_df = cooccurrence_df.fillna(0)
-    return cooccurrence_df
+#     cooccurrence_df = pd.DataFrame(skill_counts)
+#     cooccurrence_df = cooccurrence_df.fillna(0)
+#     return cooccurrence_df
 
 def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_state_df: pd.DataFrame, city: str = 'Chicago, IL') -> pd.DataFrame:
     """

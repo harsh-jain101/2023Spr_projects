@@ -137,6 +137,16 @@ def calculate_annual_compensation(row: pd.Series, bound: str) -> float:
     :param row: pd.Series: row of a pandas DataFrame containing salary information
     :param bound: str: 'min' or 'max' depending on the type of compensation to calculate
     :return: float: calculated annual compensation
+    
+    >>> df = pd.DataFrame({'frequency':['hourly', 'monthly', 'yearly'], 'min_salary':[55.0, 15000.0, 148000.0], 'max_salary':['60.0', '17000.0', '155000.0']})
+    >>> result = df.apply(lambda row: calculate_annual_compensation(row, 'min'), axis=1)
+    >>> expected_result = pd.Series([105600.0, 180000.0, 148000.0])
+    >>> pd.testing.assert_series_equal(expected_result, result)
+    
+    >>> df = pd.DataFrame({'frequency':['hourly', 'monthly', 'yearly'], 'min_salary':[55.0, 15000.0, 148000.0], 'max_salary':[60.0, 17000.0, 155000.0]})
+    >>> result = df.apply(lambda row: calculate_annual_compensation(row, 'max'), axis=1)
+    >>> expected_result = pd.Series([115200.0, 204000.0, 155000.0])
+    >>> pd.testing.assert_series_equal(expected_result, result)
     """
     if row['frequency'] == 'hourly':
         return row[bound + '_salary'] * 40 * 4 * 12
