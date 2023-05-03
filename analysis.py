@@ -52,6 +52,12 @@ def filter_jobs_by_salary_range(df: pd.DataFrame, salary_range: str) -> pd.DataF
     :param df: pd.DataFrame: the dataset containing job postings and their corresponding salaries
     :param salary_range: str: the salary range to filter by in the format 'min-max'
     :return: pd.DataFrame: a new dataframe containing the filtered job postings
+    
+    >>> test_df = pd.DataFrame({'min_annual_comp': [100000.0, 90000.0, 80000.0], 'max_annual_comp':[130000, 110000, 100000]})
+    >>> test_range = '90000-130000'
+    >>> result = filter_jobs_by_salary_range(test_df, test_range)
+    >>> expected_df = pd.DataFrame({'min_annual_comp': [100000.0, 90000.0], 'max_annual_comp':[130000, 110000]})
+    >>> pd.testing.assert_frame_equal(expected_df, result)
     """
     # Convert salary range to integer values
     min_salary = int(salary_range.split('-')[0])
@@ -126,12 +132,19 @@ def jobs_by_state(df: pd.DataFrame) -> pd.DataFrame:
 
     :param df: pd.DataFrame: the dataset containing job postings and their corresponding state and title
     :return: pd.DataFrame: a new dataframe containing the state, job title, and count for the most common job title in each state
+    
+    >>> df = pd.DataFrame({'state':['CA', 'CA', 'CA', 'NY', 'NY'], 'title':['Engineer', 'Engineer', 'Analyst', 'Manager', 'Manager']})
+    >>> result = jobs_by_state(df)
+    >>> expected_result = pd.DataFrame({'state':['CA', 'NY'], 'title':['Engineer', 'Manager'], 'counts':[2, 2]})
+    >>> pd.testing.assert_frame_equal(expected_result, result)
     """
     state_job_counts = df.groupby(['state', 'title']).size()
     state_job_counts = state_job_counts.reset_index()
     state_job_counts = state_job_counts.rename(columns={0: 'counts'})
     max_counts_index = state_job_counts.groupby('state')['counts'].idxmax()
     max_job_titles = state_job_counts.loc[max_counts_index]
+    max_job_titles = max_job_titles.reset_index()
+    max_job_titles = max_job_titles.drop('index', axis=1)
     return max_job_titles
 
 
