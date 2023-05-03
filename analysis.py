@@ -76,6 +76,16 @@ def top_skills(data: pd.DataFrame, n: int) -> pd.DataFrame:
     :param data: pd.DataFrame: the dataset containing job postings and their corresponding skills
     :param n: int: the number of top skills to return
     :return: pd.DataFrame: a new dataframe containing the top n skills and their corresponding count
+
+    >>> test_df = pd.DataFrame({'skills': ['Python, Java, SQL', 'Python, C, Spark', 'SQL, Mongodb, Apache Hadoop']})
+    >>> test_result = top_skills(test_df, 1)
+    >>> expected_df = pd.DataFrame.from_dict({'python': 2}, orient='index', columns=['count'])
+    >>> pd.testing.assert_frame_equal(test_result, expected_df)
+
+    >>> test_df = pd.DataFrame({'skills': ['Python, Java, SQL', 'Python, C, Spark', 'SQL, Mongodb, Apache Hadoop']})
+    >>> test_result = top_skills(test_df, 3)
+    >>> expected_df = pd.DataFrame.from_dict({'python': 2, 'sql': 2, 'java': 1}, orient='index', columns=['count'])
+    >>> pd.testing.assert_frame_equal(test_result, expected_df)
     """
     # Create a dictionary to count the occurrences of each skill
     skill_counts = {}
@@ -102,13 +112,12 @@ def top_skills(data: pd.DataFrame, n: int) -> pd.DataFrame:
                       ' Prometheus', ' ELK Stack', ' Apache Kafka',
                       'RESTful APIs', ' GraphQL', ' WebSockets', ' OAuth 2.0', ' OpenID Connect', ' SAML 2.0', ' JWT',
                       'OAuth2/OIDC libraries']
-    for sk in all_skill_list:
-        sk.replace(" ","")
+    all_skill_list = list(map(lambda x: x.strip().lower(), all_skill_list))
     # Loop over each job listing and count the number of occurrences of each skill
     for skills in data['skills']:
-        if pd.isna(skills) == True:
+        if pd.isna(skills):
             continue
-        skill_list = skills.split(',')
+        skill_list = list(map(lambda x: x.strip().lower(), skills.split(', ')))
         for skill in skill_list:
             if skill in all_skill_list:
                 if skill in skill_counts:
@@ -228,26 +237,34 @@ def plot_salary_distribution(df: pd.DataFrame, job_title: str) -> None:
 #     cooccurrence_df = cooccurrence_df.fillna(0)
 #     return cooccurrence_df
 
+
 def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_state_df: pd.DataFrame, city: str = 'Chicago, IL') -> pd.DataFrame:
     """
     Calculates the cost of living adjusted mean salary for every job post.
     
     :param job_df: DataFrame: the dataset containing the job lisitngs, mean salaries and other attributes.
-    : param cli_df: DataFrame: the dataset containg cost of living index for different cities in US
-    : param cli_state_df: DataFrame: the dataset containg cost of living index for the states in US
-    : param city: string: city against which to calculate the mean salary
+    :param cli_df: DataFrame: the dataset containg cost of living index for different cities in US
+    :param cli_state_df: DataFrame: the dataset containg cost of living index for the states in US
+    :param city: string: city against which to calculate the mean salary
+
+    >>> test_cli_df = pd.DataFrame({'city': ['Chicago', 'New York', 'San Fransisco'], 'state':['IL', 'NY', 'CA'], 'cost_of_living_index': [100, 130, 120]})
+    >>> test_state_df = pd.DataFrame({'state': ['NC', 'OH'], 'cost_of_living_index': [90, 70]})
+    >>> test_job_df = pd.DataFrame({'city': ['Chicago', 'New York', 'Charlotte', 'Columbus'], 'state': ['IL', 'NY', 'NC', 'OH'], 'mean_salary': [100000, 150000, 80000, 75000]})
+    >>> test_result = calculate_adjusted_salary(test_job_df, test_cli_df, test_state_df, 'Chicago, IL')
+    >>> expected_df = pd.DataFrame({'city': ['Chicago', 'New York', 'Charlotte', 'Columbus'], 'state': ['IL', 'NY', 'NC', 'OH'], 'mean_salary': [100000, 150000, 80000, 75000], 'adjusted_salary': [100000.0, 115384.62, 88888.89, 107142.86]})
+    >>> pd.testing.assert_frame_equal(test_result, expected_df)
     """
     df = job_df.copy()
     df['city_state'] = df.city.str.cat(df.state, sep=', ')
     cli_df['city_state'] = cli_df.city.str.cat(cli_df.state, sep=', ')
-    ref_cli = float(cli_df.loc[cli_df.city_state==city, 'cost_of_living_index'])
+    ref_cli = float(cli_df.loc[cli_df.city_state == city, 'cost_of_living_index'])
     for idx, job in df.iterrows():
         if pd.notna(job.mean_salary) and cli_df.city_state.str.contains('^'+job['city_state']+'$', regex=True).any():
-            city_cli = float(cli_df.loc[cli_df.city_state==job['city_state'], 'cost_of_living_index'])
-            df.loc[idx, 'adjusted_salary'] = round(df.loc[idx, 'mean_salary']*(city_cli / ref_cli), 2)
+            city_cli = float(cli_df.loc[cli_df.city_state == job['city_state'], 'cost_of_living_index'])
+            df.loc[idx, 'adjusted_salary'] = round(df.loc[idx, 'mean_salary']/(city_cli / ref_cli), 2)
         elif pd.notna(job.mean_salary) and cli_state_df.state.str.contains('^'+job['state']+'$', regex=True).any():
-            state_cli = float(cli_state_df.loc[cli_state_df.state==job['state'], 'cost_of_living_index'])
-            df.loc[idx, 'adjusted_salary'] = round(df.loc[idx, 'mean_salary']*(state_cli / ref_cli), 2)
+            state_cli = float(cli_state_df.loc[cli_state_df.state == job['state'], 'cost_of_living_index'])
+            df.loc[idx, 'adjusted_salary'] = round(df.loc[idx, 'mean_salary']/(state_cli / ref_cli), 2)
         else:
             df.loc[idx, 'adjusted_salary'] = np.nan
-    return df
+    return df.drop('city_state', axis=1)
