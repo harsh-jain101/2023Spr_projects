@@ -17,6 +17,12 @@ def calculate_skill_match(df: pd.DataFrame, skills: list[str]) -> pd.DataFrame:
     :param df: pd.DataFrame: the dataset containing job postings and their corresponding skills
     :param skills: List[str]: the list of skills to match against the job postings
     :return: pd.DataFrame: a new dataframe with the 'skill_match' column added
+
+    >>> test_df = pd.DataFrame({'skills': ['Python, SQL, Java', 'Python, SQL', 'Java, C++']})
+    >>> test_skills = ['Python']
+    >>> test_result = calculate_skill_match(test_df, test_skills)[['skills', 'skill_match']]
+    >>> expected_test_result = pd.DataFrame({'skills': ['Python, SQL, Java', 'Python, SQL', 'Java, C++'], 'skill_match': [33.33, 50.00, 0.00]})
+    >>> pd.testing.assert_frame_equal(test_result, expected_test_result)
     """
     # Convert to set
     skills_set = set(skills)
@@ -26,12 +32,12 @@ def calculate_skill_match(df: pd.DataFrame, skills: list[str]) -> pd.DataFrame:
         if pd.notna(job_skills):
             job_skills_set = set(job_skills.split(', '))
             # Calculate the percentage 
-            match_percent = len(job_skills_set & skills_set) / len(skills_set) * 100
+            match_percent = round((len(job_skills_set & skills_set) / len(job_skills_set)) * 100, 2)
             skill_matches.append(match_percent)
         else:
             skill_matches.append(np.nan)
 
-    # Add the 'skill_match' column to the original dfframe
+    # Add the 'skill_match' column to the original dataframe
     df_with_match = df.copy()
     df_with_match['skill_match'] = skill_matches
 
