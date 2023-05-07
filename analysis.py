@@ -25,12 +25,18 @@ def calculate_skill_match(df: pd.DataFrame, skills: list[str]) -> pd.DataFrame:
     >>> pd.testing.assert_frame_equal(test_result, expected_test_result)
     """
     # Convert to set
-    skills_set = set(skills)
-
+    try:
+        skills_set = set(skills)
+    except TypeError:
+        raise TypeError("skills should be a list")
     skill_matches = []
     for job_skills in df['skills']:
         if pd.notna(job_skills):
-            job_skills_set = set(job_skills.split(', '))
+            try:
+                job_skills_set = set(job_skills.split(', '))
+            except AttributeError:
+                raise TypeError("skills should be separated by a comma and space")
+
             # Calculate the percentage 
             match_percent = round((len(job_skills_set & skills_set) / len(job_skills_set)) * 100, 2)
             skill_matches.append(match_percent)
@@ -60,13 +66,16 @@ def filter_jobs_by_salary_range(df: pd.DataFrame, salary_range: str) -> pd.DataF
     >>> pd.testing.assert_frame_equal(expected_df, result)
     """
     # Convert salary range to integer values
-    min_salary = int(salary_range.split('-')[0])
-    max_salary = int(salary_range.split('-')[1])
+    try:
+        min_salary = int(salary_range.split('-')[0])
+        max_salary = int(salary_range.split('-')[1])
 
-    filtered_df = df[(df['min_annual_comp'] >= min_salary) & (df['max_annual_comp'] <= max_salary)]
+        filtered_df = df[(df['min_annual_comp'] >= min_salary) & (df['max_annual_comp'] <= max_salary)]
 
-    return filtered_df
-
+        return filtered_df
+    except (ValueError, TypeError, AttributeError):
+        print("Invalid input for salary range. Input format should be min-max")
+        return None
 
 def top_skills(data: pd.DataFrame, n: int) -> pd.DataFrame:
     """
@@ -87,6 +96,9 @@ def top_skills(data: pd.DataFrame, n: int) -> pd.DataFrame:
     >>> expected_df = pd.DataFrame.from_dict({'python': 2, 'sql': 2, 'java': 1}, orient='index', columns=['count'])
     >>> pd.testing.assert_frame_equal(test_result, expected_df)
     """
+    if n <= 0:
+        raise ValueError("n must be a positive integer")
+ 
     # Create a dictionary to count the occurrences of each skill
     skill_counts = {}
     # Utilised chatgpt to remove generic terms from skills.unique like computer, engineering, which were not real skills but were occuring many times. Reference - https://chat.openai.com/
@@ -113,6 +125,10 @@ def top_skills(data: pd.DataFrame, n: int) -> pd.DataFrame:
                       'RESTful APIs', ' GraphQL', ' WebSockets', ' OAuth 2.0', ' OpenID Connect', ' SAML 2.0', ' JWT',
                       'OAuth2/OIDC libraries']
     all_skill_list = list(map(lambda x: x.strip().lower(), all_skill_list))
+    
+    if n > len(all_skill_list):
+        raise ValueError("n cannot be greater than the number of all of the skills")
+  
     # Loop over each job listing and count the number of occurrences of each skill
     for skills in data['skills']:
         if pd.isna(skills):
@@ -147,6 +163,8 @@ def jobs_by_state(df: pd.DataFrame) -> pd.DataFrame:
     >>> expected_result = pd.DataFrame({'state':['CA', 'NY'], 'title':['Engineer', 'Manager'], 'counts':[2, 2]})
     >>> pd.testing.assert_frame_equal(expected_result, result)
     """
+    if 'state' not in df.columns or 'title' not in df.columns:
+        raise ValueError("df should contain 'state' and 'title' columns")
     state_job_counts = df.groupby(['state', 'title']).size()
     state_job_counts = state_job_counts.reset_index()
     state_job_counts = state_job_counts.rename(columns={0: 'counts'})
@@ -189,7 +207,9 @@ def plot_salary_distribution(df: pd.DataFrame, job_title: str) -> None:
     :param job_title: str: the job title to plot the salary distribution for
     :return: None
     """
-
+    if 'mean_salary' not in df.columns or 'title' not in df.columns:
+        raise ValueError("df should contain 'mean_salary' and 'title' columns")
+        
     df_salary_plot = df[df['mean_salary'].notnull() & df['title'].notnull()]
     matching_titles = df_salary_plot[df_salary_plot['title'].str.contains(job_title, case=False)]['title'].unique()
 
@@ -218,25 +238,6 @@ def plot_salary_distribution(df: pd.DataFrame, job_title: str) -> None:
     plt.ylabel('Mean Salary ($)')
     plt.show()
 
-# We are still working on this function.
-
-# def skill_cooccurrence(df: pd.DataFrame) -> pd.DataFrame:
-#     skill_counts = {}
-#     for skills in df['skills']:
-#         skills_set = set(skills.split(', '))
-#         for skill in skills_set:
-#             if skill not in skill_counts:
-#                 skill_counts[skill] = {}
-#             for other_skill in skills_set:
-#                 if skill != other_skill:
-#                     if other_skill not in skill_counts[skill]:
-#                         skill_counts[skill][other_skill] = 0
-#                     skill_counts[skill][other_skill] += 1
-
-#     cooccurrence_df = pd.DataFrame(skill_counts)
-#     cooccurrence_df = cooccurrence_df.fillna(0)
-#     return cooccurrence_df
-
 
 def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_state_df: pd.DataFrame, city: str = 'Chicago, IL') -> pd.DataFrame:
     """
@@ -248,7 +249,7 @@ def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_st
     :param city: string: city against which to calculate the mean salary
 
     >>> test_cli_df = pd.DataFrame({'city': ['Chicago', 'New York', 'San Fransisco'], 'state':['IL', 'NY', 'CA'], 'cost_of_living_index': [100, 130, 120]})
-    >>> test_state_df = pd.DataFrame({'state': ['NC', 'OH'], 'cost_of_living_index': [90, 70]})
+    >>> test_state_df = pd.DataFrame({'state': ['NC', 'sOH'], 'cost_of_living_index': [90, 70]})
     >>> test_job_df = pd.DataFrame({'city': ['Chicago', 'New York', 'Charlotte', 'Columbus'], 'state': ['IL', 'NY', 'NC', 'OH'], 'mean_salary': [100000, 150000, 80000, 75000]})
     >>> test_result = calculate_adjusted_salary(test_job_df, test_cli_df, test_state_df, 'Chicago, IL')
     >>> expected_df = pd.DataFrame({'city': ['Chicago', 'New York', 'Charlotte', 'Columbus'], 'state': ['IL', 'NY', 'NC', 'OH'], 'mean_salary': [100000, 150000, 80000, 75000], 'adjusted_salary': [100000.0, 115384.62, 88888.89, 107142.86]})
@@ -268,6 +269,7 @@ def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_st
         else:
             df.loc[idx, 'adjusted_salary'] = np.nan
     return df.drop('city_state', axis=1)
+
 
 def skill_co_occ(df: pd.DataFrame)-> pd.DataFrame:
     all_skill_list = ['Azure AD',

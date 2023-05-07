@@ -22,11 +22,13 @@ def detect_number(x: str) -> bool:
     >>> detect_number('ter eev sdf')
     False
     """
-    pattern = re.compile(r'^.*\d.*$')
-    if re.match(pattern, x) is None:
-        return False
-    return True
-
+    try:
+        pattern = re.compile(r'^.*\d.*$')
+        if re.match(pattern, x) is None:
+            return False
+        return True
+    except TypeError:
+        print("Input value is not a string")
 
 def find_salary(salary_string: str) -> list[float]:
     """
@@ -46,20 +48,23 @@ def find_salary(salary_string: str) -> list[float]:
     >>> find_salary('$456.67-678.56')
     [456.67, 678.56]
     """
-    salary_string = salary_string.lower().replace(',', '')
-    pattern = re.compile(r'[\d(\.\d)?]+')
-    salaries = re.findall(pattern, salary_string)
-    for idx in range(len(salaries)):
-        check_idx = salary_string.index(salaries[idx]) + len(salaries[idx])
-        if check_idx == len(salary_string) or not (salary_string[check_idx] in ['k', 'm']):
-            salaries[idx] = round(float(salaries[idx]), 2)
-        elif salary_string[check_idx] == 'k':  # For example - 100k meaning 100000 (k=1000)
-            salaries[idx] = round(float(salaries[idx]) * 1000, 2)
-        elif salary_string[check_idx] == 'm':  # For example 1m meaning 1000000 (m= million)
-            salaries[idx] = round(float(salaries[idx]) * math.pow(10, 6), 2)
+    try:
+        salary_string = salary_string.lower().replace(',', '')
+        pattern = re.compile(r'[\d(\.\d)?]+')
+        salaries = re.findall(pattern, salary_string)
+        for idx in range(len(salaries)):
+            check_idx = salary_string.index(salaries[idx]) + len(salaries[idx])
+            if check_idx == len(salary_string) or not (salary_string[check_idx] in ['k', 'm']):
+                salaries[idx] = round(float(salaries[idx]), 2)
+            elif salary_string[check_idx] == 'k':  # For example - 100k meaning 100000 (k=1000)
+                salaries[idx] = round(float(salaries[idx]) * 1000, 2)
+            elif salary_string[check_idx] == 'm':  # For example 1m meaning 1000000 (m= million)
+                salaries[idx] = round(float(salaries[idx]) * math.pow(10, 6), 2)
 
-    return salaries
-
+        return salaries
+    except TypeError:
+        print("Input value is not a string")
+        return []
 
 def determine_payment_frequency(salary_string: str, salaries: list[float]) -> str:
     """
@@ -82,6 +87,10 @@ def determine_payment_frequency(salary_string: str, salaries: list[float]) -> st
     >>> determine_payment_frequency('$50k', [50000.00])
     'yearly'
     """
+    if not salary_string:
+        raise ValueError("salary_string is empty")
+    if not salaries:
+        raise ValueError("salaries list is empty")
     frequency = None
     hourly = ['hr', 'hourly', 'hour']
     monthly = ['monthly', 'mo', 'month']
@@ -121,14 +130,18 @@ def det_salary_range_and_frequency(salary_string: str) -> dict:
     >>> det_salary_range_and_frequency('$15-$20')
     {'min_salary': 15.0, 'max_salary': 20.0, 'frequency': 'hourly'}
     """
-    salaries = find_salary(salary_string)
-    if len(salaries) == 1:
-        salaries.append(salaries[0])
-    frequency = determine_payment_frequency(salary_string, salaries)
-    salaries.append(frequency)
-    d = {'min_salary': salaries[0], 'max_salary': salaries[1], 'frequency': salaries[2]}
-    return d
-
+    try:
+        salaries = find_salary(salary_string)
+        if len(salaries) == 1:
+            salaries.append(salaries[0])
+        frequency = determine_payment_frequency(salary_string, salaries)
+        salaries.append(frequency)
+        d = {'min_salary': salaries[0], 'max_salary': salaries[1], 'frequency': salaries[2]}
+        return d
+    except TypeError:
+        print("Input value is not a string")
+        return {}
+    
 
 def calculate_annual_compensation(row: pd.Series, bound: str) -> float:
     """
@@ -148,11 +161,14 @@ def calculate_annual_compensation(row: pd.Series, bound: str) -> float:
     >>> expected_result = pd.Series([115200.0, 204000.0, 155000.0])
     >>> pd.testing.assert_series_equal(expected_result, result)
     """
-    if row['frequency'] == 'hourly':
-        return row[bound + '_salary'] * 40 * 4 * 12
-    elif row['frequency'] == 'monthly':
-        return row[bound + '_salary'] * 12
-    return row[bound + '_salary']
+    try:
+        if row['frequency'] == 'hourly':
+            return row[bound + '_salary'] * 40 * 4 * 12
+        elif row['frequency'] == 'monthly':
+            return row[bound + '_salary'] * 12
+        return row[bound + '_salary']
+    except ValueError:
+        print("inavalid value")
 
 
 def calc_min_comp(row: pd.Series) -> float:
