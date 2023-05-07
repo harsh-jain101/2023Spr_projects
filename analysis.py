@@ -268,3 +268,50 @@ def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_st
         else:
             df.loc[idx, 'adjusted_salary'] = np.nan
     return df.drop('city_state', axis=1)
+
+def skill_co_occ(df: pd.DataFrame)-> pd.DataFrame:
+    all_skill_list = ['Azure AD',
+                      '.net', ' oauth', ' valet key', ' api', ' azure AD',
+                      'AAA game engine experience', ' C/C++ programming', ' BS CS/CE',
+                      'Azure', ' Active Directory',
+                      'SSO', ' SAML', ' OAuth', ' OpenID',
+                      'Window', ' AD', ' SCCM', ' ServiceNow', ' IT infrastructure', ' DHCP', ' DNS',
+                      'Python', ' PHP', ' MySQL', ' SDLC',
+                      'ASP', ' .NET', ' SQL',
+                      'JavaScript', ' HTML', ' SQL', ' .Net', ' C#', ' CSS', ' J2EE', ' Java',
+                      'Research', ' Test', ' A/V', ' Assembly', ' Python', ' Perl', ' Bash', ' JavaScript', ' Java',
+                      ' PHP', ' Windows', ' UNIX', ' Linux', ' Excel', ' PowerPoint', ' SAS',
+                      'Oracle', ' MySQL', ' SQL',
+                      'IT', ' Biometrics', ' DNA', ' Project Manager', ' SDLC', ' Test', ' J2EE', ' C#',
+                      'Automotive', ' API', ' Ruby on Rails', ' Swift', ' Kotlin', ' Release', ' Java', ' API',
+                      ' MySQL', ' Apache', ' Unity', ' Unreal Engine', ' OpenGL', ' DirectX',
+                      'Machine Learning', ' Deep Learning', ' Natural Language Processing', ' Computer Vision',
+                      ' Data Science', ' Big Data', ' Hadoop', ' Spark', ' Cassandra', ' MongoDB', ' Elasticsearch',
+                      ' Redis', ' RabbitMQ',
+                      'Git', ' Jenkins', ' Ansible', ' Puppet', ' Chef', ' Nagios', ' New Relic', ' Splunk', ' Grafana',
+                      ' Prometheus', ' ELK Stack', ' Apache Kafka',
+                      'RESTful APIs', ' GraphQL', ' WebSockets', ' OAuth 2.0', ' OpenID Connect', ' SAML 2.0', ' JWT',
+                      'OAuth2/OIDC libraries']
+    all_skill_list = list(map(lambda x: x.strip().lower(), all_skill_list))
+    skills_dict = {}
+    connecting_df = pd.DataFrame(columns=['job_id', 'skill'])
+    for idx, row in df.skills.iteritems():
+        if pd.notna(row):
+            skills = row.split(',')
+            skills = list(map(lambda x: x.strip().lower(), skills))
+            for skill in skills:
+                if skill in all_skill_list:
+                    skills_dict[skill] = skills_dict.get(skill, 0) + 1
+                    connecting_df = pd.concat([connecting_df, pd.DataFrame.from_dict({'job_id': [idx], 'skill': [skill]})], 
+                                              ignore_index=True, axis=0)
+    skills_dict = {'skill': skills_dict.keys(), 'frequency': skills_dict.values()}
+    skills_df = pd.DataFrame(skills_dict)
+    connecting_df.sort_values(by='job_id', inplace=True)
+    jobs_grouped = connecting_df.groupby('job_id')
+    job_skills_cross = jobs_grouped.apply(lambda x: pd.merge(x, x, how='cross'))
+    job_skills_cross.reset_index(inplace=True)
+    job_skills_cross.drop(['job_id_x', 'job_id_y', 'level_1'], axis=1, inplace=True)
+    job_skills_cross = job_skills_cross.loc[~(job_skills_cross['skill_x']==job_skills_cross['skill_y']),:]
+    skill_coocc = job_skills_cross.groupby(['skill_x', 'skill_y']).agg('count').reset_index().sort_values('job_id', ascending=False)
+    skill_coocc = skill_coocc.loc[skill_coocc['skill_x'] < skill_coocc['skill_y'], :]
+    return skill_coocc
