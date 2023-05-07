@@ -1,5 +1,5 @@
 # Dice Tech Jobs Dataset Analysis 
-
+![alt text](https://github.com/harsh-jain101/2023Spr_projects/blob/main/42213888_2106777306306301_5707618916243603456_n.jpeg?raw=true)
 # Overview
 This project analyzes and cleans the Dice Tech Jobs dataset obtained from Kaggle. The dataset contains information about various tech job postings including job titles, locations, salaries, and required skills. The project is split into two Python modules, analysis.py and cleaning.py, which handle the analysis and cleaning of the dataset respectively. The Jupyter notebook dice.ipynb imports both modules and showcases the analysis and cleaned dataset.
 
