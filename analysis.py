@@ -272,6 +272,15 @@ def calculate_adjusted_salary(job_df: pd.DataFrame, cli_df: pd.DataFrame, cli_st
 
 
 def skill_co_occ(df: pd.DataFrame)-> pd.DataFrame:
+    """
+    Produces a pandas DataFrame with the frequency of co-occurrence of each pair of skills in the job postings.
+    
+    :param df: DataFrame: dataset containing job listings also with a column of the skills required.
+    :return: DataFrame: dataset containing the frequency of co-occurrence of each pair of skills in the job postings
+    >>> df = pd.DataFrame({'skills': ['Python, SQL, AWS, C#', 'Java, SQL, React', 'PHP, MySQL, Apache, Linux'], 'job_id': ['1','2','3']})
+    >>> skill_co_occ(df)
+    >>> expected_df = pd.DataFrame({
+    """
     all_skill_list = ['Azure AD',
                       '.net', ' oauth', ' valet key', ' api', ' azure AD',
                       'AAA game engine experience', ' C/C++ programming', ' BS CS/CE',
