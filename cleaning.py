@@ -1,11 +1,6 @@
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import math
-import json
 import re
-import seaborn as sns
-import folium
 
 
 def detect_number(x: str) -> bool:
