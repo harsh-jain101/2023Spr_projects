@@ -30,6 +30,7 @@ def detect_number(x: str) -> bool:
     except TypeError:
         print("Input value is not a string")
 
+
 def find_salary(salary_string: str) -> list[float]:
     """
     Extracts the salary information from a given string and returns it as a list of floats.
@@ -65,6 +66,7 @@ def find_salary(salary_string: str) -> list[float]:
     except TypeError:
         print("Input value is not a string")
         return []
+
 
 def determine_payment_frequency(salary_string: str, salaries: list[float]) -> str:
     """
@@ -191,5 +193,53 @@ def calc_max_comp(row: pd.Series) -> float:
     return calculate_annual_compensation(row, 'max')
 
 
-if __name__=='__main__':
+def separate_skills(df: pd.DataFrame) -> list[pd.DataFrame]:
+    """
+    Separates the skills column from the job dataframe to create a new dataframe of skills along with a connecting
+    dataframe to link a skill with a job.
+    :param df: pd.DataFrame: dataframe of all the job listings.
+    :return: list[pd.DataFrame]: list containing the job dataframe without the skill column, skill dataframe and
+    connecting dataframe.
+    """
+    all_skill_list = ['Azure AD',
+                      '.net', ' oauth', ' valet key', ' api', ' azure AD',
+                      'AAA game engine experience', ' C/C++ programming', ' BS CS/CE',
+                      'Azure', ' Active Directory',
+                      'SSO', ' SAML', ' OAuth', ' OpenID',
+                      'Window', ' AD', ' SCCM', ' ServiceNow', ' IT infrastructure', ' DHCP', ' DNS',
+                      'Python', ' PHP', ' MySQL', ' SDLC',
+                      'ASP', ' .NET', ' SQL',
+                      'JavaScript', ' HTML', ' SQL', ' .Net', ' C#', ' CSS', ' J2EE', ' Java',
+                      'Research', ' Test', ' A/V', ' Assembly', ' Python', ' Perl', ' Bash', ' JavaScript', ' Java',
+                      ' PHP', ' Windows', ' UNIX', ' Linux', ' Excel', ' PowerPoint', ' SAS',
+                      'Oracle', ' MySQL', ' SQL',
+                      'IT', ' Biometrics', ' DNA', ' Project Manager', ' SDLC', ' Test', ' J2EE', ' C#',
+                      'Automotive', ' API', ' Ruby on Rails', ' Swift', ' Kotlin', ' Release', ' Java', ' API',
+                      ' MySQL', ' Apache', ' Unity', ' Unreal Engine', ' OpenGL', ' DirectX',
+                      'Machine Learning', ' Deep Learning', ' Natural Language Processing', ' Computer Vision',
+                      ' Data Science', ' Big Data', ' Hadoop', ' Spark', ' Cassandra', ' MongoDB', ' Elasticsearch',
+                      ' Redis', ' RabbitMQ',
+                      'Git', ' Jenkins', ' Ansible', ' Puppet', ' Chef', ' Nagios', ' New Relic', ' Splunk', ' Grafana',
+                      ' Prometheus', ' ELK Stack', ' Apache Kafka',
+                      'RESTful APIs', ' GraphQL', ' WebSockets', ' OAuth 2.0', ' OpenID Connect', ' SAML 2.0', ' JWT',
+                      'OAuth2/OIDC libraries']
+    all_skill_list = list(map(lambda x: x.strip().lower(), all_skill_list))
+    skills_dict = {}
+    connecting_df = pd.DataFrame(columns=['job_id', 'skill'])
+    for idx, row in df.skills.iteritems():
+        if pd.notna(row):
+            skills = row.split(',')
+            skills = list(map(lambda x: x.strip().lower(), skills))
+            for skill in skills:
+                if skill in all_skill_list:
+                    skills_dict[skill] = skills_dict.get(skill, 0) + 1
+                    connecting_df = pd.concat(
+                        [connecting_df, pd.DataFrame.from_dict({'job_id': [idx], 'skill': [skill]})],
+                        ignore_index=True, axis=0)
+    skills_dict = {'skill': skills_dict.keys(), 'frequency': skills_dict.values()}
+    skills_df = pd.DataFrame(skills_dict)
+    return df.drop('skills', axis=1), skills_df, connecting_df
+
+
+if __name__ == '__main__':
     pass
